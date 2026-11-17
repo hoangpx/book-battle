@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>Battle of the Books Practice</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;800&display=swap">
+<style>
+/* Layout: one playful arcade column on a sky; big question bubble, five chunky book buttons, bookworm mascot cheering. Deliberately single bright theme. */
+:root{
+  --sky:#bfe6ff; --sky2:#e9f7ff; --card:#ffffff; --ink:#2b2350; --soft:#6d6596;
+  --sun:#ffc93c; --pink:#ff7aa8; --mint:#43c59e; --red:#ff5d5d; --violet:#7b61ff;
+  --display:"Baloo 2","Comic Sans MS","Trebuchet MS",system-ui,sans-serif;
+  --body:"Nunito","Trebuchet MS",system-ui,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{background:linear-gradient(var(--sky),var(--sky2) 70%);background-attachment:fixed;color:var(--ink);font-family:var(--body);font-size:18px;line-height:1.4;
+  padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));padding-block:16px 40px;overflow-x:hidden}
+.cloud{position:fixed;background:#fff;border-radius:999px;opacity:.75;z-index:0;pointer-events:none}
+.cloud::before,.cloud::after{content:"";position:absolute;background:#fff;border-radius:50%}
+.c1{width:150px;height:44px;top:70px;left:-20px}.c1::before{width:70px;height:70px;left:24px;top:-34px}.c1::after{width:50px;height:50px;left:80px;top:-22px}
+.c2{width:120px;height:38px;top:200px;right:-10px}.c2::before{width:56px;height:56px;left:18px;top:-28px}.c2::after{width:42px;height:42px;left:64px;top:-18px}
+.wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;display:grid;gap:16px}
+h1,h2,.display{font-family:var(--display);margin:0;line-height:1.05;text-wrap:balance}
+button{font:inherit;cursor:pointer;color:var(--ink)}
+button:focus-visible{outline:4px solid var(--violet);outline-offset:3px}
+
+/* top bar */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.pill{background:var(--card);border:3px solid var(--ink);border-radius:999px;padding:4px 14px;font-weight:800;display:flex;gap:6px;align-items:center;box-shadow:0 4px 0 var(--ink);font-variant-numeric:tabular-nums}
+.pill .n{font-family:var(--display);font-size:24px;color:var(--violet)}
+.pill.streak .n{color:#ff8a1f}
+.mute{background:var(--card);border:3px solid var(--ink);border-radius:999px;width:46px;height:46px;box-shadow:0 4px 0 var(--ink);font-size:20px}
+.progress{height:14px;background:#fff;border:3px solid var(--ink);border-radius:999px;overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:repeating-linear-gradient(45deg,var(--mint) 0 12px,#5ad6b0 12px 24px);transition:width .4s}
+
+/* stage */
+.stage{display:grid;grid-template-columns:110px 1fr;gap:12px;align-items:end}
+.worm{width:110px;height:110px}
+.bubble{position:relative;background:var(--card);border:3px solid var(--ink);border-radius:22px;padding:16px 18px;box-shadow:0 6px 0 var(--ink);min-width:0}
+.bubble::before{content:"";position:absolute;left:-16px;bottom:22px;border:14px solid transparent;border-right-color:var(--ink)}
+.bubble::after{content:"";position:absolute;left:-10px;bottom:24px;border:12px solid transparent;border-right-color:var(--card)}
+.bubble .tag{font-family:var(--display);color:var(--pink);font-size:18px}
+.bubble .q{font-size:clamp(19px,3.4vw,24px);font-weight:800}
+
+/* answer grid */
+.books{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:12px}
+.book{background:var(--card);border:3px solid var(--ink);border-radius:18px;padding:10px 8px 12px;display:grid;justify-items:center;gap:4px;box-shadow:0 6px 0 var(--ink);transition:transform .12s, box-shadow .12s;text-align:center;min-width:0}
+.book svg{width:78px;height:78px}
+.book b{font-family:var(--display);font-size:17px;line-height:1.1}
+.book:hover:not(:disabled){transform:translateY(-3px);box-shadow:0 9px 0 var(--ink)}
+.book:active:not(:disabled){transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.book:disabled{cursor:default}
+.book.right{background:#d8fbe9;border-color:#13865f;box-shadow:0 6px 0 #13865f}
+.book.wrong{background:#ffe0e0;border-color:#c62f2f;box-shadow:0 6px 0 #c62f2f;animation:shake .4s}
+.book.dim{opacity:.4}
+.authors{display:grid;gap:10px}
+.author{background:var(--card);border:3px solid var(--ink);border-radius:16px;padding:12px;font-weight:800;box-shadow:0 5px 0 var(--ink);text-align:left}
+.author.right{background:#d8fbe9;border-color:#13865f}
+.author.wrong{background:#ffe0e0;border-color:#c62f2f;animation:shake .4s}
+
+/* feedback */
+.feedback{border:3px solid var(--ink);border-radius:20px;padding:14px 16px;display:grid;gap:6px;box-shadow:0 6px 0 var(--ink)}
+.feedback.ok{background:#d8fbe9}
+.feedback.half{background:#fff4cf}
+.feedback.no{background:#ffe0e0}
+.feedback h2{font-size:28px}
+.feedback .ans{font-weight:800}
+.feedback .why{color:var(--soft)}
+.big{font-family:var(--display);font-size:22px;border:3px solid var(--ink);border-radius:999px;padding:10px 26px;background:var(--sun);box-shadow:0 6px 0 var(--ink);justify-self:start}
+.big:active{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.big.alt{background:var(--card)}
+
+/* start / end */
+.panel{background:var(--card);border:3px solid var(--ink);border-radius:26px;padding:22px;box-shadow:0 8px 0 var(--ink);display:grid;gap:16px;justify-items:center;text-align:center}
+.panel h1{font-size:clamp(34px,8vw,56px);color:var(--violet)}
+.panel h1 span{color:var(--pink)}
+.panel p{margin:0;color:var(--soft);max-width:34em}
+.rowbtn{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.lineup{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.lineup svg{width:56px;height:56px}
+.stars{font-size:54px;letter-spacing:6px}
+.stars .off{filter:grayscale(1);opacity:.3}
+.howto{display:grid;gap:6px;text-align:left;background:var(--sky2);border-radius:16px;padding:12px 16px;font-weight:600}
+.missed{text-align:left;display:grid;gap:8px;width:100%}
+.missed div{background:var(--sky2);border-radius:14px;padding:10px 12px;font-size:16px}
+.missed b{font-family:var(--display)}
+.pick{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.pick button{border:3px solid var(--ink);border-radius:999px;padding:6px 14px;background:#fff;font-weight:800}
+.pick button[aria-pressed="true"]{background:var(--mint);color:#fff}
+
+canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
+.pop{animation:pop .45s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@keyframes pop{0%{transform:scale(.8)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.worm g.body{animation:bob 2.4s ease-in-out infinite;transform-origin:center}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:480px){.stage{grid-template-columns:72px 1fr}.worm{width:72px;height:72px}.book svg{width:60px;height:60px}.books{grid-template-columns:repeat(2,1fr)}.book b{font-size:15px}}
+</style>
+</head>
+<body>
+
+
+<div class="cloud c1"></div><div class="cloud c2"></div>
+<canvas id="fx"></canvas>
+<div class="wrap" id="app"></div>
+
+<script>
+const BOOKS=[
+ {id:"cw",title:"Charlotte's Web",author:"E.B. White"},
+ {id:"gv",title:"Garlic and the Vampire",author:"Bree Paulsen"},
+ {id:"if",title:"Inspector Flytrap",author:"Tom Angleberger & Cece Bell"},
+ {id:"lm",title:"Lunch Money",author:"Andrew Clements"},
+ {id:"sl",title:"Sea Legs",author:"Jules Bakes & Niki Smith"}
+];
+const Q=[
+/*CW*/
+["cw","does a girl stop her father from using an ax on a newborn animal?","Fern stops Mr. Arable from killing the runt pig, Wilbur."],
+["cw","does a girl feed a baby animal from a bottle?","Fern bottle-feeds Wilbur."],
+["cw","is an animal sold to a relative for six dollars?","Wilbur is sold to Fern's uncle, Homer Zuckerman."],
+["cw","does a character say every word three times?","The goose talks like \"certain-ertain-ertain.\""],
+["cw","does a character jump off a pile with a string tied to his tail?","Wilbur tries to spin a web like Charlotte and lands with a thud."],
+["cw","does an old animal warn a friend that he is being fattened up for Christmas?","The old sheep tells Wilbur the bad news."],
+["cw","does a hired man find words in the barn and get shivers?","Lurvy is the first to see SOME PIG in the web."],
+["cw","does a character collect words from the town dump?","Templeton the rat brings scraps of magazines and ads to Charlotte."],
+["cw","is a soap advertisement used to find a new word?","The ad says \"With New Radiant Action,\" so Charlotte writes RADIANT."],
+["cw","are the words CRUNCHY and PRE-SHRUNK turned down?","Charlotte decides those words will not work for Wilbur."],
+["cw","does a boy fall, break a rotten egg, and run away from the smell?","Avery tries to knock Charlotte down with a stick."],
+["cw","does a mother visit a doctor because her daughter spends all day with farm animals?","Mrs. Arable talks to Dr. Dorian about Fern."],
+["cw","does a character get a bath in buttermilk?","Mrs. Zuckerman gives Wilbur a buttermilk bath before the fair."],
+["cw","is a big rival in the next pen at the fair called Uncle?","Uncle is the huge pig next to Wilbur at the County Fair."],
+["cw","does a girl stop caring about the barn because she wants to ride the Ferris wheel with a boy?","Fern spends the fair with Henry Fussy."],
+["cw","is the last word ever written HUMBLE?","Charlotte's final word for Wilbur is HUMBLE."],
+["cw","does a character win a special prize and a medal at the fair?","Wilbur gets a special award instead of a blue ribbon."],
+["cw","does a character call something she made her magnum opus?","Charlotte calls her egg sac her great work."],
+["cw","are there 514 eggs?","Charlotte's egg sac holds 514 eggs."],
+["cw","does a character carry something precious home in his mouth?","Wilbur carries Charlotte's egg sac back to the barn."],
+["cw","does a character agree to help only if he gets first choice of food from now on?","Templeton fetches the egg sac in exchange for first pick at the trough."],
+["cw","do three babies named Joy, Aranea, and Nellie stay behind?","Three of Charlotte's children stay in the barn with Wilbur."],
+["cw","does a character's full name end in A. Cavatica?","Charlotte A. Cavatica is Charlotte's full name."],
+/*IF*/
+["if","does a character who lives in a pot run his own business?","Inspector Flytrap's detective agency is run from his flowerpot."],
+["if","does a character turn down a job because it is not a BIG DEAL?","Inspector Flytrap only takes BIG DEAL mysteries."],
+["if","does an assistant push her boss around town on a skateboard?","Nina the Goat pushes Inspector Flytrap's pot."],
+["if","does a character answer almost everything with \"Big deal\"?","That is Nina the Goat's favorite reply."],
+["if","does someone call for help finding a lost pickle paperweight?","Inspector Flytrap refuses, because it is too small a case."],
+["if","does an emu ask for help at a museum?","Lulu Emu brings Inspector Flytrap to the art museum."],
+["if","is there a painting called The Mona Spaghetti?","The Mona Spaghetti hangs in the art museum."],
+["if","is a statue of a striped elephant called Enigma II?","Enigma II is in the art museum."],
+["if","is a yellow glob found on a newly discovered painting?","The Da Vinci Cold case starts with a glob on a flower painting."],
+["if","does a character lick a mystery glob?","Nina the Goat tastes it, and that gives a clue."],
+["if","does a famous artist turn out to be allergic to flowers?","Leonardo da Vinci sneezed, and the glob was his ancient booger."],
+["if","does a dodo's shop suddenly start to stink?","Koko Dodo's Cookie Shop has a stink mystery."],
+["if","does someone hope a secret recipe has dead flies in it?","Inspector Flytrap wishes Koko Dodo's cookies had flies."],
+["if","is a giant smelly shoe found on a roof?","The stink in the cookie shop comes from the shoe."],
+["if","does a giant shoe belong to a pirate with a peg leg?","The shoe on the cookie shop roof belonged to a giant pirate."],
+["if","does a character eat a great-great-great-grandpop's secret cookbook?","Nina the Goat eats Koko Dodo's family cookbook."],
+["if","do two friends eat a meal out of a trash can behind a restaurant?","Inspector Flytrap and Nina eat behind Penguini Linguini's."],
+["if","does nobody call because the phone got eaten?","Nina eats Inspector Flytrap's phone."],
+["if","does a grumpy kiwi make a phone call?","Mimi Kiwi reports a missing rose."],
+["if","does something go missing from a greenhouse at Snooty la Tooty Gardens?","Wanda the Rose disappears."],
+["if","does a character fall in love at first sight with a rose?","Inspector Flytrap falls for Wanda the Rose."],
+["if","does a second goat named William show up?","William the Goat helped Wanda escape, and Nina falls for him."],
+["if","do characters escape a crowd of angry clients by speeding down a big hill?","Nina finds a hill and they roll away to Penguini's."],
+/*GV*/
+["gv","does a witch use magic to bring her garden helpers to life?","Witch Agnes brought the vegetables to life."],
+["gv","does a nervous character oversleep and show up late to market day?","Garlic is late, and Carrot covers for her."],
+["gv","does a calm best friend cover for someone who is late?","Carrot covers for Garlic at the market."],
+["gv","do villagers sell ordinary, non-magic versions of themselves at a market?","The vegetable people sell regular vegetables."],
+["gv","does a potato notice smoke coming from a chimney on a hill?","Potato spots smoke at the old castle."],
+["gv","does a witch look into a magic mirror to see who moved in?","Agnes sees the newcomer in the castle."],
+["gv","does a grumpy character volunteer someone else for a scary job?","Celery picks Garlic, and everyone agrees."],
+["gv","is a hero given a stake and a hammer?","Agnes gives Garlic a stake and hammer before she leaves."],
+["gv","does a character ride a raven to a castle?","Garlic flies to the castle on a raven."],
+["gv","does a character run off and leave a friend alone at a castle door?","Celery runs away, and Garlic goes in alone. (Check this one in the book.)"],
+["gv","does a friend wait on top of a water tower?","Carrot waits there for Garlic to come home."],
+["gv","does a scary neighbor turn out to be retired and a vegetarian?","The Count only wants to garden."],
+["gv","does someone drink beetroot and tomato juice with lime and cayenne?","That is the Count's favorite drink."],
+["gv","does a character show a scroll with an agreement with hunters?","The Count proves he is harmless. (Check this one in the book.)"],
+["gv","does a host help pick up spilled seeds and grains?","Garlic spills her seeds, and the Count helps. (Check this one in the book.)"],
+["gv","does a character turn into a bat and fly home?","The Count flies back to his castle."],
+["gv","does a witch remember a story her mother told her about the castle?","Agnes's mother said a vampire lived there more than a hundred years ago."],
+["gv","does a new neighbor who loves gardening become friends with a witch?","The Count and Agnes share a love of gardening."],
+/*SL*/
+["sl","is a family's home named the Merimaid?","The Merimaid is Janey's family sailboat."],
+["sl","is a family's home 42 feet long?","The Merimaid sailboat is 42 feet long."],
+["sl","does a girl leave her school in Indian Harbour Beach, Florida?","Janey leaves her school to sail with her family."],
+["sl","does a girl have to say goodbye to her best friend Rae?","Rae is Janey's best friend back in Florida."],
+["sl","does a girl's father work as a welder?","Janey's dad is a welder."],
+["sl","does a mother clean an office to help pay for a parking spot?","Janey's mom cleans the marina office to pay for the boat slip."],
+["sl","does a story take place in 1993?","Janey's family sets sail in 1993."],
+["sl","does a girl's mom become her teacher?","Janey is homeschooled by her mom."],
+["sl","does a girl feel sick, scared of storms, and lonely after a big move?","Janey has a hard time getting her sea legs."],
+["sl","does a girl have to pick up her letters in different ports?","Janey keeps in touch with Rae through letters and costly phone calls."],
+["sl","does a girl use a radio to look for other kids?","Janey radios another boat and meets Astrid."],
+["sl","does a girl meet an older, cool girl in St. Thomas?","Janey meets Astrid in the U.S. Virgin Islands."],
+["sl","do two girls explore an abandoned military bunker?","Astrid leads Janey to places they are not allowed to go."],
+["sl","do two girls almost get trapped in an underground cistern?","Janey gets angry at Astrid for taking risks."],
+["sl","does a girl spend a day at a local school where kids ask if her family is rich?","Janey starts thinking about what she has."],
+["sl","does a girl stay at her grandmother's house during a hurricane?","Janey's parents stay with the boat during the storm."],
+["sl","does a girl come back after a storm to find her friend has already left?","Astrid's family has sailed away."],
+/*LM*/
+["lm","does a boy have a special talent for earning dollars?","Greg Kenton has always been good at making money."],
+["lm","does a little boy get paid to clean his older brothers' rooms?","Greg cleans Ross and Edward's rooms until his mom stops it."],
+["lm","do two older brothers call their little brother Scrooge?","Ross and Edward tease Greg."],
+["lm","does a father find hidden cash and make his son open a savings account?","Greg's first deposit is over $3,000."],
+["lm","does a boy sell gum for ten cents a stick at recess?","Greg sells gum and Starbursts at lunch recess."],
+["lm","does a boy buy 144 troll dolls for twelve dollars?","Greg sells them all and makes $24 of profit."],
+["lm","does a principal tell a student he can no longer sell toys at school?","Mrs. Davenport stops Greg's toy sales."],
+["lm","does a student sell tiny homemade books for 25 cents each?","Greg's Chunky Comics cost a quarter."],
+["lm","does it cost about two cents to make something that sells for a quarter?","Greg says it is like turning two pennies into a quarter."],
+["lm","does a boy call each thing he sells a unit?","Greg counts his Chunky Comics as units."],
+["lm","is the first hero a Stone Age hunter named Creon?","Creon stars in the first Chunky Comic."],
+["lm","does a girl make a little book called The Lost Unicorn?","Maura Shaw makes Eentsy Beentsy Books."],
+["lm","do two neighbors race Big Wheels that always end in a tie?","Greg and Maura have been rivals since they were small."],
+["lm","does a girl set up her lemonade stand right next to a boy's?","Maura competes with Greg from the start."],
+["lm","does a boy get a bloody nose and a black eye during math class?","Maura accidentally hits Greg when he grabs her book."],
+["lm","does a teacher explain his Toilet Theory?","Mr. Z says most people can only use one bathroom at a time."],
+["lm","does a teacher get sick at the sight of blood?","Mr. Z feels faint when Greg's nose bleeds."],
+["lm","does a girl study a library book to learn how to draw better stories?","Maura learns how to make her books better."],
+["lm","does a principal say school is for learning and thinking, not buying and selling?","Mrs. Davenport bans comic books at school."],
+["lm","does a girl ask for seventy-five percent of the profits?","Greg says 75% of nothing is nothing."],
+["lm","does one partner do the inking while the other does the writing and lettering?","Greg and Maura become business partners."],
+["lm","does a girl point out that a book club flyer is really an advertisement?","Maura notices the selling that already happens at school."],
+["lm","does a teacher ask a room full of adults to raise their hands if they read a certain kind of book as kids?","Mr. Z uses the show of hands at the School Committee meeting."],
+["lm","does a principal admit she was never allowed to read a certain kind of book as a child?","Mrs. Davenport reads a box of comics and likes them."],
+["lm","does a student suggest using the school store so any student can sell things?","Greg changes his plan at the committee meeting."],
+["lm","is a boy surprised how good it feels to give part of his earnings to the library?","Greg finds out giving can feel better than earning."],
+];
+
+// ---------- art ----------
+const ART={
+cw:`<svg viewBox="0 0 100 100"><ellipse cx="50" cy="58" rx="36" ry="32" fill="#ffb3c9" stroke="#2b2350" stroke-width="3"/><path d="M22 34 L18 14 L36 26Z M78 34 L82 14 L64 26Z" fill="#ff8fb1" stroke="#2b2350" stroke-width="3" stroke-linejoin="round"/><ellipse cx="50" cy="66" rx="15" ry="11" fill="#ff8fb1" stroke="#2b2350" stroke-width="3"/><ellipse cx="45" cy="66" rx="2.6" ry="4" fill="#2b2350"/><ellipse cx="55" cy="66" rx="2.6" ry="4" fill="#2b2350"/><circle cx="38" cy="48" r="4" fill="#2b2350"/><circle cx="62" cy="48" r="4" fill="#2b2350"/><circle cx="39.5" cy="46.5" r="1.3" fill="#fff"/><circle cx="63.5" cy="46.5" r="1.3" fill="#fff"/><ellipse cx="27" cy="62" rx="5" ry="3" fill="#ff7aa8" opacity=".6"/><ellipse cx="73" cy="62" rx="5" ry="3" fill="#ff7aa8" opacity=".6"/><path d="M78 8 L78 22" stroke="#2b2350" stroke-width="1.5"/><circle cx="78" cy="25" r="4.5" fill="#2b2350"/><path d="M73 21 l-4 -3 M73 25 l-5 0 M73 29 l-4 3 M83 21 l4 -3 M83 25 l5 0 M83 29 l4 3" stroke="#2b2350" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+gv:`<svg viewBox="0 0 100 100"><path d="M50 10 C47 22 44 26 40 30 C22 36 16 52 20 68 C25 86 40 92 50 92 C60 92 75 86 80 68 C84 52 78 36 60 30 C56 26 53 22 50 10Z" fill="#fbf6ea" stroke="#2b2350" stroke-width="3" stroke-linejoin="round"/><path d="M50 32 C42 50 42 76 50 91 M50 32 C58 50 58 76 50 91" fill="none" stroke="#d9cdb0" stroke-width="2.5"/><path d="M50 10 C48 4 52 2 54 0" stroke="#43c59e" stroke-width="4" fill="none" stroke-linecap="round"/><circle cx="38" cy="60" r="4" fill="#2b2350"/><circle cx="62" cy="60" r="4" fill="#2b2350"/><circle cx="39.4" cy="58.6" r="1.3" fill="#fff"/><circle cx="63.4" cy="58.6" r="1.3" fill="#fff"/><path d="M44 70 Q50 75 56 70" stroke="#2b2350" stroke-width="3" fill="none" stroke-linecap="round"/><ellipse cx="30" cy="68" rx="5" ry="3" fill="#ff7aa8" opacity=".55"/><ellipse cx="70" cy="68" rx="5" ry="3" fill="#ff7aa8" opacity=".55"/></svg>`,
+if:`<svg viewBox="0 0 100 100"><path d="M28 70 H72 L66 96 H34Z" fill="#e8835b" stroke="#2b2350" stroke-width="3" stroke-linejoin="round"/><rect x="24" y="64" width="52" height="10" rx="3" fill="#f39c75" stroke="#2b2350" stroke-width="3"/><path d="M50 64 V50" stroke="#2f9e5b" stroke-width="5"/><path d="M50 50 C24 52 14 34 20 18 C34 18 48 30 50 50Z" fill="#6fd17c" stroke="#2b2350" stroke-width="3" stroke-linejoin="round"/><path d="M50 50 C76 52 86 34 80 18 C66 18 52 30 50 50Z" fill="#6fd17c" stroke="#2b2350" stroke-width="3" stroke-linejoin="round"/><path d="M20 18 l4 -6 l4 5 l4 -6 l4 6 l4 -5 l3 6 M80 18 l-4 -6 l-4 5 l-4 -6 l-4 6 l-4 -5 l-3 6" stroke="#2b2350" stroke-width="2" fill="none" stroke-linejoin="round"/><path d="M28 30 C36 28 44 36 48 46 M72 30 C64 28 56 36 52 46" fill="#ff7a8a" opacity=".55"/><circle cx="36" cy="34" r="6" fill="#fff" stroke="#2b2350" stroke-width="2.5"/><circle cx="64" cy="34" r="6" fill="#fff" stroke="#2b2350" stroke-width="2.5"/><circle cx="37" cy="35" r="2.6" fill="#2b2350"/><circle cx="63" cy="35" r="2.6" fill="#2b2350"/><path d="M28 24 h16 M56 24 h16" stroke="#2b2350" stroke-width="3" stroke-linecap="round"/></svg>`,
+lm:`<svg viewBox="0 0 100 100"><rect x="14" y="20" width="44" height="58" rx="4" fill="#7b61ff" stroke="#2b2350" stroke-width="3" transform="rotate(-8 36 49)"/><rect x="20" y="28" width="32" height="18" rx="3" fill="#fff" stroke="#2b2350" stroke-width="2" transform="rotate(-8 36 37)"/><text x="22" y="66" font-family="Baloo 2, sans-serif" font-weight="800" font-size="11" fill="#fff" transform="rotate(-8 36 62)">COMIX</text><circle cx="64" cy="62" r="26" fill="#ffc93c" stroke="#2b2350" stroke-width="3"/><circle cx="64" cy="62" r="20" fill="none" stroke="#e0a514" stroke-width="2.5"/><circle cx="56" cy="57" r="3.5" fill="#2b2350"/><circle cx="72" cy="57" r="3.5" fill="#2b2350"/><path d="M56 68 Q64 76 72 68" stroke="#2b2350" stroke-width="3" fill="none" stroke-linecap="round"/><text x="57" y="86" font-family="Baloo 2, sans-serif" font-weight="800" font-size="9" fill="#2b2350">25¢</text></svg>`,
+sl:`<svg viewBox="0 0 100 100"><path d="M52 10 V70" stroke="#2b2350" stroke-width="3"/><path d="M52 12 L52 62 L20 62Z" fill="#ff5d5d" stroke="#2b2350" stroke-width="3" stroke-linejoin="round"/><path d="M56 22 L56 62 L80 62Z" fill="#ff8a7a" stroke="#2b2350" stroke-width="3" stroke-linejoin="round"/><path d="M14 68 H88 L78 82 H24Z" fill="#fff" stroke="#2b2350" stroke-width="3" stroke-linejoin="round"/><circle cx="40" cy="75" r="2.5" fill="#2b2350"/><circle cx="62" cy="75" r="2.5" fill="#2b2350"/><path d="M46 77 Q51 80 56 77" stroke="#2b2350" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M4 88 Q14 82 24 88 T44 88 T64 88 T84 88 T104 88" fill="none" stroke="#3aa0e8" stroke-width="4" stroke-linecap="round"/><path d="M0 96 Q10 90 20 96 T40 96 T60 96 T80 96 T100 96" fill="none" stroke="#7cc6f5" stroke-width="4" stroke-linecap="round"/><path d="M52 10 l8 3 l-8 3" fill="#ffc93c" stroke="#2b2350" stroke-width="2"/></svg>`
+};
+function worm(mood){
+  const mouth={happy:'<path d="M50 62 Q60 74 70 62" stroke="#2b2350" stroke-width="3.5" fill="#ff7a8a" stroke-linecap="round"/>',
+    sad:'<path d="M52 70 Q60 62 68 70" stroke="#2b2350" stroke-width="3.5" fill="none" stroke-linecap="round"/>',
+    think:'<path d="M54 66 h12" stroke="#2b2350" stroke-width="3.5" stroke-linecap="round"/>'}[mood];
+  const extra=mood==="happy"?'<path d="M10 20 l4 8 l8 1 l-6 5 l2 8 l-8 -4 l-8 4 l2 -8 l-6 -5 l8 -1Z" fill="#ffc93c" stroke="#2b2350" stroke-width="2"/>':mood==="sad"?'<path d="M76 54 q3 6 0 9 q-3 -3 0 -9Z" fill="#7cc6f5"/>':'';
+  return `<svg class="worm" viewBox="0 0 110 110"><rect x="8" y="80" width="94" height="24" rx="5" fill="#ff7aa8" stroke="#2b2350" stroke-width="3"/><path d="M55 80 V104" stroke="#2b2350" stroke-width="3"/><g class="body"><path d="M38 84 C30 70 36 60 44 58" stroke="#43c59e" stroke-width="18" fill="none" stroke-linecap="round"/><path d="M38 84 C30 70 36 60 44 58" stroke="#2b2350" stroke-width="3" fill="none" stroke-dasharray="2 9" stroke-linecap="round"/><circle cx="60" cy="50" r="24" fill="#6fe0b8" stroke="#2b2350" stroke-width="3"/><circle cx="51" cy="46" r="7.5" fill="#fff" stroke="#2b2350" stroke-width="2.5"/><circle cx="69" cy="46" r="7.5" fill="#fff" stroke="#2b2350" stroke-width="2.5"/><path d="M58.5 46 h3" stroke="#2b2350" stroke-width="2.5"/><circle cx="52" cy="47" r="2.8" fill="#2b2350"/><circle cx="70" cy="47" r="2.8" fill="#2b2350"/>${mouth}<ellipse cx="44" cy="58" rx="4" ry="2.5" fill="#ff7aa8" opacity=".6"/><ellipse cx="76" cy="58" rx="4" ry="2.5" fill="#ff7aa8" opacity=".6"/><path d="M60 26 q-2 -10 6 -14" stroke="#2b2350" stroke-width="2.5" fill="none" stroke-linecap="round"/><circle cx="67" cy="11" r="3.5" fill="#ffc93c" stroke="#2b2350" stroke-width="2"/></g>${extra}</svg>`;
+}
+const CHEERS=["Awesome!","You got it!","Super reader!","Book boss!","Woo-hoo!","Nailed it!"];
+const OOPS=["Oops!","Not this time!","Almost!","Nice try!"];
+
+// ---------- sound ----------
+let ac=null, sound=true;
+function beep(notes){if(!sound)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();let t=ac.currentTime;
+  notes.forEach(([f,d])=>{const o=ac.createOscillator(),g=ac.createGain();o.type="triangle";o.frequency.value=f;g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d);t+=d*.8})}catch(e){}}
+const SND={yes:()=>beep([[660,.12],[880,.12],[1320,.22]]),half:()=>beep([[660,.14],[784,.2]]),no:()=>beep([[300,.18],[220,.3]]),tap:()=>beep([[520,.06]])};
+
+// ---------- confetti ----------
+const cv=document.getElementById("fx"),cx=cv.getContext("2d");let parts=[];
+function resize(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio}addEventListener("resize",resize);resize();
+function confetti(){if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;const C=["#ffc93c","#ff7aa8","#43c59e","#7b61ff","#3aa0e8"];
+  for(let k=0;k<90;k++)parts.push({x:cv.width/2,y:cv.height*.45,vx:(Math.random()-.5)*18*devicePixelRatio,vy:(-Math.random()*16-4)*devicePixelRatio,r:Math.random()*6+4,c:C[k%5],a:Math.random()*6,l:90});
+  if(parts.length<=90)tick()}
+function tick(){cx.clearRect(0,0,cv.width,cv.height);parts.forEach(p=>{p.vy+=.5*devicePixelRatio;p.x+=p.vx;p.y+=p.vy;p.a+=.2;p.l--;cx.save();cx.translate(p.x,p.y);cx.rotate(p.a);cx.fillStyle=p.c;cx.fillRect(-p.r,-p.r/2,p.r*2*devicePixelRatio/1.5,p.r*devicePixelRatio/1.5);cx.restore()});
+  parts=parts.filter(p=>p.l>0&&p.y<cv.height+40);if(parts.length)requestAnimationFrame(tick);else cx.clearRect(0,0,cv.width,cv.height)}
+
+// ---------- game ----------
+const app=document.getElementById("app");
+const book=id=>BOOKS.find(b=>b.id===id);
+const clean=s=>s.replace(/\s*\(Check this one in the book\.\)/,"");
+function shuffle(a){a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a}
+let G={len:10,on:new Set(BOOKS.map(b=>b.id))};
+function bar(){return `<div class="bar"><div class="pill">⭐ <span class="n">${G.score}</span></div><div class="pill">Q <span class="n">${Math.min(G.i+1,G.deck.length)}/${G.deck.length}</span></div><div class="pill streak">🔥 <span class="n">${G.streak}</span></div><button class="mute" id="mute" aria-label="Sound on or off">${sound?"🔊":"🔇"}</button></div><div class="progress"><i style="width:${G.i/G.deck.length*100}%"></i></div>`}
+function wireMute(){const m=document.getElementById("mute");if(m)m.onclick=()=>{sound=!sound;m.textContent=sound?"🔊":"🔇"}}
+
+function startScreen(){
+  app.innerHTML=`<div class="panel">
+    ${worm("happy")}
+    <h1>Book <span>Battle!</span></h1>
+    <p>Read the clue. Tap the book it comes from. Then pick who wrote it. Get both right for 5 points, just like the real battle.</p>
+    <div class="lineup">${BOOKS.map(b=>ART[b.id]).join("")}</div>
+    <div class="howto"><div>📚 Right book = <b>3 points</b></div><div>✍️ Right author too = <b>+2 more</b></div><div>🔥 Keep a streak going for bonus cheers!</div></div>
+    <div class="display" style="font-size:20px">How many questions?</div>
+    <div class="pick" id="len">${[10,20,30].map(n=>`<button id="len-${n}" aria-pressed="${G.len===n}" data-n="${n}">${n}</button>`).join("")}</div>
+    <div class="display" style="font-size:20px">Which books?</div>
+    <div class="pick" id="on">${BOOKS.map(b=>`<button id="on-${b.id}" aria-pressed="${G.on.has(b.id)}" data-b="${b.id}">${b.title}</button>`).join("")}</div>
+    <button class="big" id="go">Let's play! ▶</button>
+  </div>`;
+  app.querySelectorAll("#len button").forEach(b=>b.onclick=()=>{G.len=+b.dataset.n;SND.tap();startScreen()});
+  app.querySelectorAll("#on button").forEach(b=>b.onclick=()=>{const id=b.dataset.b;if(G.on.has(id)){if(G.on.size>1)G.on.delete(id)}else G.on.add(id);SND.tap();startScreen()});
+  document.getElementById("go").onclick=()=>{SND.tap();newGame()};
+}
+function newGame(){
+  const pool=shuffle(Q.filter(q=>G.on.has(q[0])));
+  Object.assign(G,{deck:pool.slice(0,G.len),i:0,score:0,streak:0,best:0,missed:[]});
+  ask();
+}
+function ask(){
+  if(G.i>=G.deck.length)return endScreen();
+  const q=G.deck[G.i];
+  app.innerHTML=`${bar()}
+    <div class="stage">${worm("think")}<div class="bubble"><div class="tag">In which book…</div><div class="q">${q[1]}</div></div></div>
+    <div class="books" id="books">${BOOKS.map(b=>`<button class="book" id="bk-${b.id}" data-b="${b.id}">${ART[b.id]}<b>${b.title}</b></button>`).join("")}</div>
+    <div id="after"></div>`;
+  wireMute();
+  app.querySelectorAll(".book").forEach(btn=>btn.onclick=()=>pickBook(btn.dataset.b));
+}
+function pickBook(id){
+  const q=G.deck[G.i],right=q[0],bk=book(right);
+  app.querySelectorAll(".book").forEach(b=>{b.disabled=true;if(b.dataset.b===right)b.classList.add("right");else if(b.dataset.b===id)b.classList.add("wrong");else b.classList.add("dim")});
+  if(id!==right){
+    SND.no();G.streak=0;G.missed.push(q);
+    setWorm("sad");refreshBar();
+    document.getElementById("after").innerHTML=`<div class="feedback no pop"><h2>${OOPS[Math.floor(Math.random()*OOPS.length)]} ❌</h2>
+      <div class="ans">The answer is <u>${bk.title}</u> by ${bk.author}.</div><div class="why">${clean(q[2])}</div>
+      <button class="big" id="next">Next ▶</button></div>`;
+    wireNext();return;
+  }
+  G.score+=3;SND.half();setWorm("happy");refreshBar();
+  const others=shuffle(BOOKS.filter(b=>b.id!==right)).slice(0,2);
+  const opts=shuffle([bk,...others]);
+  document.getElementById("after").innerHTML=`<div class="feedback half pop"><h2>Right book! +3 📚</h2><div class="ans">Now, who wrote <u>${bk.title}</u>?</div>
+    <div class="authors">${opts.map(b=>`<button class="author" id="au-${b.id}" data-b="${b.id}">✍️ ${b.author}</button>`).join("")}</div></div>`;
+  app.querySelectorAll(".author").forEach(a=>a.onclick=()=>pickAuthor(a.dataset.b));
+}
+function pickAuthor(id){
+  const q=G.deck[G.i],right=q[0],bk=book(right);
+  app.querySelectorAll(".author").forEach(a=>{a.disabled=true;if(a.dataset.b===right)a.classList.add("right");else if(a.dataset.b===id)a.classList.add("wrong")});
+  const box=document.querySelector(".feedback");
+  if(id===right){
+    G.score+=2;G.streak++;G.best=Math.max(G.best,G.streak);SND.yes();confetti();
+    box.className="feedback ok pop";
+    box.innerHTML=`<h2>${CHEERS[Math.floor(Math.random()*CHEERS.length)]} +5 🎉</h2><div class="ans">${bk.title} by ${bk.author}</div><div class="why">${clean(q[2])}</div>${G.streak>=3?`<div class="ans">🔥 ${G.streak} in a row!</div>`:""}<button class="big" id="next">Next ▶</button>`;
+  }else{
+    G.streak=0;SND.no();setWorm("sad");
+    box.className="feedback no pop";
+    box.innerHTML=`<h2>Oops, wrong author! ✍️</h2><div class="ans">${bk.title} was written by <u>${bk.author}</u>. You still keep your 3 points.</div><div class="why">${clean(q[2])}</div><button class="big" id="next">Next ▶</button>`;
+  }
+  refreshBar();wireNext();
+}
+function wireNext(){const n=document.getElementById("next");n.focus({preventScroll:true});n.scrollIntoView({behavior:"smooth",block:"nearest"});n.onclick=()=>{SND.tap();G.i++;ask();scrollTo({top:0,behavior:"smooth"})}}
+function setWorm(m){const w=app.querySelector(".worm");if(w)w.outerHTML=worm(m)}
+function refreshBar(){const old=app.querySelector(".bar"),p=app.querySelector(".progress");const tmp=document.createElement("div");tmp.innerHTML=bar();old.replaceWith(tmp.children[0]);p.replaceWith(tmp.children[0]);wireMute()}
+function endScreen(){
+  const max=G.deck.length*5,pct=G.score/max,stars=pct>=.85?3:pct>=.6?2:pct>=.3?1:0;
+  const msg=["Keep reading, you'll get there!","Good start! Read a little more and try again.","Great job, book battler!","WOW! You're a Battle of the Books champion!"][stars];
+  if(stars>=2)confetti();
+  app.innerHTML=`<div class="panel">${worm(stars>=1?"happy":"sad")}
+    <h1>${stars>=2?"Hooray!":"Nice work!"}</h1>
+    <div class="stars">${[0,1,2].map(k=>`<span class="${k<stars?"":"off"}">⭐</span>`).join("")}</div>
+    <div class="display" style="font-size:32px">${G.score} / ${max} points</div>
+    <p>${msg} Best streak: 🔥 ${G.best}</p>
+    ${G.missed.length?`<div class="display" style="font-size:20px">Books to look at again</div><div class="missed">${G.missed.map(q=>`<div>In which book ${q[1]}<br><b>${book(q[0]).title}</b> by ${book(q[0]).author}</div>`).join("")}</div>`:`<p>No misses at all! 🏆</p>`}
+    <div class="rowbtn"><button class="big" id="again">Play again ▶</button><button class="big alt" id="home">Change settings</button></div></div>`;
+  document.getElementById("again").onclick=()=>{SND.tap();newGame()};
+  document.getElementById("home").onclick=()=>{SND.tap();startScreen()};
+}
+startScreen();
+</script>
+
+</body>
+</html>
