@@ -354,9 +354,19 @@ function startScreen(){
   app.querySelectorAll("#on button").forEach(b=>b.onclick=()=>{const id=b.dataset.b;if(G.on.has(id)){if(G.on.size>1)G.on.delete(id)}else G.on.add(id);SND.tap();startScreen()});
   document.getElementById("go").onclick=()=>{SND.tap();newGame()};
 }
+function loadSeen(){try{return new Set(JSON.parse(localStorage.getItem("bb-seen")||"[]"))}catch(e){return new Set()}}
+function saveSeen(s){try{localStorage.setItem("bb-seen",JSON.stringify([...s]))}catch(e){}}
+let SEEN=loadSeen();
 function newGame(){
-  const pool=shuffle(Q.filter(q=>G.on.has(q[0])));
-  Object.assign(G,{deck:pool.slice(0,G.len),i:0,score:0,streak:0,best:0,missed:[]});
+  const all=Q.filter(q=>G.on.has(q[0]));
+  const fresh=shuffle(all.filter(q=>!SEEN.has(q[1])));
+  let deck=fresh.slice(0,G.len);
+  if(deck.length<G.len){ // used up every question: start a new cycle, without repeating this game's picks
+    all.forEach(q=>SEEN.delete(q[1]));
+    deck=deck.concat(shuffle(all.filter(q=>!deck.includes(q))).slice(0,G.len-deck.length));
+  }
+  deck.forEach(q=>SEEN.add(q[1]));saveSeen(SEEN);
+  Object.assign(G,{deck,i:0,score:0,streak:0,best:0,missed:[]});
   ask();
 }
 function ask(){
