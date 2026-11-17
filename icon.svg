@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7b61ff"/>
+      <stop offset="1" stop-color="#ff7aa8"/>
+    </linearGradient>
+    <radialGradient id="glow" cx=".5" cy=".42" r=".5">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="220" r="230" fill="url(#glow)"/>
+  <!-- sparkle stars -->
+  <path d="M86 92 l12 26 l28 4 l-21 19 l6 28 l-25 -14 l-25 14 l6 -28 l-21 -19 l28 -4Z" fill="#ffc93c" stroke="#2b2350" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M420 120 l8 17 l18 3 l-13 12 l4 18 l-17 -9 l-16 9 l4 -18 l-13 -12 l18 -3Z" fill="#ffc93c" stroke="#2b2350" stroke-width="6" stroke-linejoin="round"/>
+  <circle cx="440" cy="240" r="9" fill="#fff"/><circle cx="70" cy="250" r="7" fill="#fff"/>
+  <!-- worm -->
+  <path d="M190 392 C150 330 172 280 214 270" stroke="#2b2350" stroke-width="86" fill="none" stroke-linecap="round"/>
+  <path d="M190 392 C150 330 172 280 214 270" stroke="#43c59e" stroke-width="72" fill="none" stroke-linecap="round"/>
+  <path d="M168 330 q20 -8 30 6 M178 296 q20 -4 26 12" stroke="#2b2350" stroke-width="6" fill="none" stroke-linecap="round" opacity=".5"/>
+  <circle cx="280" cy="222" r="108" fill="#6fe0b8" stroke="#2b2350" stroke-width="10"/>
+  <path d="M286 116 q-8 -46 30 -66" stroke="#2b2350" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <circle cx="320" cy="48" r="17" fill="#ffc93c" stroke="#2b2350" stroke-width="8"/>
+  <circle cx="240" cy="206" r="36" fill="#fff" stroke="#2b2350" stroke-width="9"/>
+  <circle cx="322" cy="206" r="36" fill="#fff" stroke="#2b2350" stroke-width="9"/>
+  <path d="M276 206 h10" stroke="#2b2350" stroke-width="9"/>
+  <circle cx="246" cy="212" r="14" fill="#2b2350"/><circle cx="328" cy="212" r="14" fill="#2b2350"/>
+  <circle cx="251" cy="206" r="5" fill="#fff"/><circle cx="333" cy="206" r="5" fill="#fff"/>
+  <path d="M244 262 Q281 300 318 262" stroke="#2b2350" stroke-width="10" fill="#ff7a8a" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="204" cy="258" rx="17" ry="11" fill="#ff7aa8" opacity=".7"/>
+  <ellipse cx="358" cy="258" rx="17" ry="11" fill="#ff7aa8" opacity=".7"/>
+  <!-- open book -->
+  <path d="M60 380 Q160 344 256 384 Q352 344 452 380 V470 Q352 436 256 474 Q160 436 60 470Z" fill="#ffffff" stroke="#2b2350" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M256 384 V474" stroke="#2b2350" stroke-width="10"/>
+  <path d="M96 400 Q160 382 222 404 M96 428 Q160 410 222 432 M290 404 Q352 382 416 400 M290 432 Q352 410 416 428" stroke="#c9c2ea" stroke-width="9" fill="none" stroke-linecap="round"/>
+  <path d="M60 470 Q160 436 256 474 Q352 436 452 470 V490 Q352 456 256 494 Q160 456 60 490Z" fill="#ffc93c" stroke="#2b2350" stroke-width="10" stroke-linejoin="round"/>
+</svg>

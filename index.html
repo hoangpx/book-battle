@@ -3,7 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>[hidden]{display:none!important}body{margin:0}</style>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Book Battle">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#bfe6ff">
+<style>[hidden]{display:none!important}body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 <title>Battle of the Books Practice</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -93,6 +101,15 @@ button:focus-visible{outline:4px solid var(--violet);outline-offset:3px}
 .pick button{border:3px solid var(--ink);border-radius:999px;padding:6px 14px;background:#fff;font-weight:800}
 .pick button[aria-pressed="true"]{background:var(--mint);color:#fff}
 
+.timebar{height:8px;background:#fff;border:2px solid var(--ink);border-radius:999px;overflow:hidden;margin-top:-8px}
+.timebar i{display:block;height:100%;background:var(--sun);transition:width .1s linear}
+.pill.clock .n{color:var(--mint)}
+.pill.hurry{background:#ffe0e0;animation:pulse .5s infinite alternate}
+.pill.hurry .n{color:var(--red)}
+.record{background:#fff4cf;border:3px dashed var(--sun);border-radius:16px;padding:8px 14px;font-weight:700}
+.newrec{font-family:var(--display);font-size:clamp(26px,6vw,40px);color:#fff;background:linear-gradient(90deg,var(--pink),var(--violet));border:3px solid var(--ink);border-radius:999px;padding:4px 22px;box-shadow:0 6px 0 var(--ink);animation:pop .6s, wiggle 1.2s .6s infinite}
+@keyframes pulse{to{transform:scale(1.08)}}
+@keyframes wiggle{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
 canvas#fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
 .pop{animation:pop .45s}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
@@ -315,37 +332,85 @@ const OOPS=["Oops!","Not this time!","Almost!","Nice try!"];
 
 // ---------- sound ----------
 let ac=null, sound=true;
-function beep(notes){if(!sound)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();let t=ac.currentTime;
-  notes.forEach(([f,d])=>{const o=ac.createOscillator(),g=ac.createGain();o.type="triangle";o.frequency.value=f;g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d);t+=d*.8})}catch(e){}}
-const SND={yes:()=>beep([[660,.12],[880,.12],[1320,.22]]),half:()=>beep([[660,.14],[784,.2]]),no:()=>beep([[300,.18],[220,.3]]),tap:()=>beep([[520,.06]])};
+function beep(notes,type){if(!sound)return;try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();let t=ac.currentTime;
+  notes.forEach(([f,d])=>{const o=ac.createOscillator(),g=ac.createGain();o.type=type||"triangle";o.frequency.value=f;g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d);t+=d*.8})}catch(e){}}
+const SND={yes:()=>beep([[660,.12],[880,.12],[1320,.22]]),half:()=>beep([[660,.14],[784,.2]]),no:()=>beep([[300,.18],[220,.3]]),tap:()=>beep([[520,.06]]),
+  tick:()=>beep([[1000,.05]],"square"),
+  fanfare:()=>beep([[523,.15],[659,.15],[784,.15],[1047,.3],[784,.12],[1047,.5]])};
 
-// ---------- confetti ----------
-const cv=document.getElementById("fx"),cx=cv.getContext("2d");let parts=[];
-function resize(){cv.width=innerWidth*devicePixelRatio;cv.height=innerHeight*devicePixelRatio}addEventListener("resize",resize);resize();
-function confetti(){if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;const C=["#ffc93c","#ff7aa8","#43c59e","#7b61ff","#3aa0e8"];
-  for(let k=0;k<90;k++)parts.push({x:cv.width/2,y:cv.height*.45,vx:(Math.random()-.5)*18*devicePixelRatio,vy:(-Math.random()*16-4)*devicePixelRatio,r:Math.random()*6+4,c:C[k%5],a:Math.random()*6,l:90});
-  if(parts.length<=90)tick()}
-function tick(){cx.clearRect(0,0,cv.width,cv.height);parts.forEach(p=>{p.vy+=.5*devicePixelRatio;p.x+=p.vx;p.y+=p.vy;p.a+=.2;p.l--;cx.save();cx.translate(p.x,p.y);cx.rotate(p.a);cx.fillStyle=p.c;cx.fillRect(-p.r,-p.r/2,p.r*2*devicePixelRatio/1.5,p.r*devicePixelRatio/1.5);cx.restore()});
-  parts=parts.filter(p=>p.l>0&&p.y<cv.height+40);if(parts.length)requestAnimationFrame(tick);else cx.clearRect(0,0,cv.width,cv.height)}
+// ---------- confetti + fireworks ----------
+const cv=document.getElementById("fx"),cx=cv.getContext("2d");let parts=[],running=false;
+const DPR=()=>devicePixelRatio||1;
+const COLORS=["#ffc93c","#ff7aa8","#43c59e","#7b61ff","#3aa0e8","#ff8a1f"];
+const calm=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
+function resize(){cv.width=innerWidth*DPR();cv.height=innerHeight*DPR()}addEventListener("resize",resize);resize();
+function run(){if(!running){running=true;requestAnimationFrame(tick)}}
+function confetti(){if(calm())return;const d=DPR();
+  for(let k=0;k<90;k++)parts.push({k:"c",x:cv.width/2,y:cv.height*.45,vx:(Math.random()-.5)*18*d,vy:(-Math.random()*16-4)*d,r:(Math.random()*6+4)*d,c:COLORS[k%5],a:Math.random()*6,l:90,L:90});
+  run()}
+function burst(x,y){const d=DPR(),c=COLORS[Math.floor(Math.random()*COLORS.length)],c2=COLORS[Math.floor(Math.random()*COLORS.length)],n=70;
+  for(let k=0;k<n;k++){const ang=k/n*Math.PI*2,sp=(Math.random()*4+4)*d;parts.push({k:"f",x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,r:(Math.random()*2+2.2)*d,c:k%3?c:c2,l:70,L:70})}
+  run()}
+function rocket(){const d=DPR();const x=cv.width*(.15+Math.random()*.7),ty=cv.height*(.12+Math.random()*.3);
+  parts.push({k:"r",x,y:cv.height,vx:(Math.random()-.5)*2*d,vy:-(cv.height-ty)/38,ty,r:3*d,c:"#fff3c4",l:60,L:60});
+  beep([[180,.25]],"sawtooth");run()}
+function fireworks(){if(calm())return;for(let k=0;k<9;k++)setTimeout(rocket,k*380+Math.random()*200)}
+function tick(){
+  cx.globalCompositeOperation="source-over";cx.clearRect(0,0,cv.width,cv.height);const d=DPR();
+  const born=[];
+  parts.forEach(p=>{
+    if(p.k==="c"){p.vy+=.5*d;p.x+=p.vx;p.y+=p.vy;p.a+=.2;p.l--;cx.save();cx.translate(p.x,p.y);cx.rotate(p.a);cx.fillStyle=p.c;cx.fillRect(-p.r,-p.r/2,p.r*1.4,p.r*.7);cx.restore();return}
+    if(p.k==="r"){p.x+=p.vx;p.y+=p.vy;p.l--;cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,p.r,0,7);cx.fill();
+      cx.fillStyle="rgba(255,201,60,.5)";cx.beginPath();cx.arc(p.x,p.y+8*d,p.r*.7,0,7);cx.fill();
+      if(p.y<=p.ty){p.l=0;born.push([p.x,p.y])}return}
+    p.vx*=.96;p.vy=p.vy*.96+.12*d;p.x+=p.vx;p.y+=p.vy;p.l--;
+    cx.globalAlpha=Math.max(0,p.l/p.L);cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,p.r,0,7);cx.fill();cx.globalAlpha=1;
+  });
+  parts=parts.filter(p=>p.l>0&&p.y<cv.height+40);
+  born.forEach(([x,y])=>{burst(x,y);beep([[90+Math.random()*60,.35]],"sawtooth")});
+  if(parts.length)requestAnimationFrame(tick);else{running=false;cx.clearRect(0,0,cv.width,cv.height)}}
+
+// ---------- storage ----------
+function load(k,def){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch(e){return def}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+let SEEN=new Set(load("bb-seen",[]));
+const recKey=n=>"bb-rec-"+n;
+const fmt=s=>{s=Math.round(s);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
 
 // ---------- game ----------
 const app=document.getElementById("app");
 const book=id=>BOOKS.find(b=>b.id===id);
 const clean=s=>s.replace(/\s*\(Check this one in the book\.\)/,"");
 function shuffle(a){a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a}
-let G={len:10,on:new Set(BOOKS.map(b=>b.id))};
-function bar(){return `<div class="bar"><div class="pill">⭐ <span class="n">${G.score}</span></div><div class="pill">Q <span class="n">${Math.min(G.i+1,G.deck.length)}/${G.deck.length}</span></div><div class="pill streak">🔥 <span class="n">${G.streak}</span></div><button class="mute" id="mute" aria-label="Sound on or off">${sound?"🔊":"🔇"}</button></div><div class="progress"><i style="width:${G.i/G.deck.length*100}%"></i></div>`}
+const LIMIT=30; // seconds per question
+let G={len:10,on:new Set(BOOKS.map(b=>b.id))},TIMER=null;
+
+function bar(){return `<div class="bar"><div class="pill">⭐ <span class="n">${G.score}</span></div><div class="pill">Q <span class="n">${Math.min(G.i+1,G.deck.length)}/${G.deck.length}</span></div><div class="pill streak">🔥 <span class="n">${G.streak}</span></div><div class="pill clock${G.left<=5&&G.live?" hurry":""}" id="clockpill">⏱ <span class="n" id="clock">${Math.max(0,G.left)}</span></div><button class="mute" id="mute" aria-label="Sound on or off">${sound?"🔊":"🔇"}</button></div><div class="progress"><i style="width:${G.i/G.deck.length*100}%"></i></div><div class="timebar"><i id="timefill" style="width:${Math.max(0,G.left)/LIMIT*100}%"></i></div>`}
 function wireMute(){const m=document.getElementById("mute");if(m)m.onclick=()=>{sound=!sound;m.textContent=sound?"🔊":"🔇"}}
 
+// per-question clock: runs from the question appearing until the last answer (or time runs out)
+function startClock(){stopClock(false);G.left=LIMIT;G.live=true;G.qStart=performance.now();
+  TIMER=setInterval(()=>{const left=LIMIT-(performance.now()-G.qStart)/1000,whole=Math.ceil(left);
+    const f=document.getElementById("timefill");if(f)f.style.width=Math.max(0,left)/LIMIT*100+"%";
+    if(whole!==G.left){G.left=whole;const c=document.getElementById("clock"),p=document.getElementById("clockpill");
+      if(c)c.textContent=Math.max(0,whole);if(p)p.classList.toggle("hurry",whole<=5);if(whole<=5&&whole>0)SND.tick()}
+    if(left<=0)timeUp()},100)}
+function stopClock(count=true){if(TIMER){clearInterval(TIMER);TIMER=null}
+  if(count&&G.live){G.time+=Math.min(LIMIT,(performance.now()-G.qStart)/1000)}G.live=false}
+function timeUp(){if(!G.live)return;if(G.phase==="book")pickBook(null);else if(G.phase==="author")pickAuthor(null)}
+
+function recordLine(n){const r=load(recKey(n),null);return r?`🏆 Record for ${n} questions: <b>${r.score} points</b> in <b>${fmt(r.time)}</b>`:`🏆 No record yet for ${n} questions. Set one!`}
 function startScreen(){
+  stopClock(false);
   app.innerHTML=`<div class="panel">
     ${worm("happy")}
     <h1>Book <span>Battle!</span></h1>
     <p>Read the clue. Tap the book it comes from. Then pick who wrote it. Get both right for 5 points, just like the real battle.</p>
     <div class="lineup">${BOOKS.map(b=>ART[b.id]).join("")}</div>
-    <div class="howto"><div>📚 Right book = <b>3 points</b></div><div>✍️ Right author too = <b>+2 more</b></div><div>🔥 Keep a streak going for bonus cheers!</div></div>
+    <div class="howto"><div>📚 Right book = <b>3 points</b></div><div>✍️ Right author too = <b>+2 more</b></div><div>⏱ You have <b>${LIMIT} seconds</b> for each question</div><div>🏆 Beat your record for fireworks! More points wins. Same points? Faster wins.</div></div>
     <div class="display" style="font-size:20px">How many questions?</div>
     <div class="pick" id="len">${[10,20,30].map(n=>`<button id="len-${n}" aria-pressed="${G.len===n}" data-n="${n}">${n}</button>`).join("")}</div>
+    <div class="record">${recordLine(G.len)}</div>
     <div class="display" style="font-size:20px">Which books?</div>
     <div class="pick" id="on">${BOOKS.map(b=>`<button id="on-${b.id}" aria-pressed="${G.on.has(b.id)}" data-b="${b.id}">${b.title}</button>`).join("")}</div>
     <button class="big" id="go">Let's play! ▶</button>
@@ -354,9 +419,6 @@ function startScreen(){
   app.querySelectorAll("#on button").forEach(b=>b.onclick=()=>{const id=b.dataset.b;if(G.on.has(id)){if(G.on.size>1)G.on.delete(id)}else G.on.add(id);SND.tap();startScreen()});
   document.getElementById("go").onclick=()=>{SND.tap();newGame()};
 }
-function loadSeen(){try{return new Set(JSON.parse(localStorage.getItem("bb-seen")||"[]"))}catch(e){return new Set()}}
-function saveSeen(s){try{localStorage.setItem("bb-seen",JSON.stringify([...s]))}catch(e){}}
-let SEEN=loadSeen();
 function newGame(){
   const all=Q.filter(q=>G.on.has(q[0]));
   const fresh=shuffle(all.filter(q=>!SEEN.has(q[1])));
@@ -365,40 +427,46 @@ function newGame(){
     all.forEach(q=>SEEN.delete(q[1]));
     deck=deck.concat(shuffle(all.filter(q=>!deck.includes(q))).slice(0,G.len-deck.length));
   }
-  deck.forEach(q=>SEEN.add(q[1]));saveSeen(SEEN);
-  Object.assign(G,{deck,i:0,score:0,streak:0,best:0,missed:[]});
+  deck.forEach(q=>SEEN.add(q[1]));save("bb-seen",[...SEEN]);
+  Object.assign(G,{deck,i:0,score:0,streak:0,best:0,missed:[],time:0,left:LIMIT,live:false,phase:null});
   ask();
 }
 function ask(){
   if(G.i>=G.deck.length)return endScreen();
-  const q=G.deck[G.i];
+  const q=G.deck[G.i];G.phase="book";G.left=LIMIT;
   app.innerHTML=`${bar()}
     <div class="stage">${worm("think")}<div class="bubble"><div class="tag">In which book…</div><div class="q">${q[1]}</div></div></div>
     <div class="books" id="books">${BOOKS.map(b=>`<button class="book" id="bk-${b.id}" data-b="${b.id}">${ART[b.id]}<b>${b.title}</b></button>`).join("")}</div>
     <div id="after"></div>`;
   wireMute();
   app.querySelectorAll(".book").forEach(btn=>btn.onclick=()=>pickBook(btn.dataset.b));
+  startClock();
 }
 function pickBook(id){
-  const q=G.deck[G.i],right=q[0],bk=book(right);
+  if(G.phase!=="book")return;
+  const q=G.deck[G.i],right=q[0],bk=book(right),late=id===null;
   app.querySelectorAll(".book").forEach(b=>{b.disabled=true;if(b.dataset.b===right)b.classList.add("right");else if(b.dataset.b===id)b.classList.add("wrong");else b.classList.add("dim")});
   if(id!==right){
+    G.phase="done";stopClock();
     SND.no();G.streak=0;G.missed.push(q);
     setWorm("sad");refreshBar();
-    document.getElementById("after").innerHTML=`<div class="feedback no pop"><h2>${OOPS[Math.floor(Math.random()*OOPS.length)]} ❌</h2>
+    document.getElementById("after").innerHTML=`<div class="feedback no pop"><h2>${late?"Time's up! ⏰":OOPS[Math.floor(Math.random()*OOPS.length)]+" ❌"}</h2>
       <div class="ans">The answer is <u>${bk.title}</u> by ${bk.author}.</div><div class="why">${clean(q[2])}</div>
       <button class="big" id="next">Next ▶</button></div>`;
     wireNext();return;
   }
+  G.phase="author";
   G.score+=3;SND.half();setWorm("happy");refreshBar();
   const others=shuffle(BOOKS.filter(b=>b.id!==right)).slice(0,2);
   const opts=shuffle([bk,...others]);
-  document.getElementById("after").innerHTML=`<div class="feedback half pop"><h2>Right book! +3 📚</h2><div class="ans">Now, who wrote <u>${bk.title}</u>?</div>
+  document.getElementById("after").innerHTML=`<div class="feedback half pop"><h2>Right book! +3 📚</h2><div class="ans">Now, who wrote <u>${bk.title}</u>? Hurry, the clock is still going!</div>
     <div class="authors">${opts.map(b=>`<button class="author" id="au-${b.id}" data-b="${b.id}">✍️ ${b.author}</button>`).join("")}</div></div>`;
   app.querySelectorAll(".author").forEach(a=>a.onclick=()=>pickAuthor(a.dataset.b));
 }
 function pickAuthor(id){
-  const q=G.deck[G.i],right=q[0],bk=book(right);
+  if(G.phase!=="author")return;
+  G.phase="done";stopClock();
+  const q=G.deck[G.i],right=q[0],bk=book(right),late=id===null;
   app.querySelectorAll(".author").forEach(a=>{a.disabled=true;if(a.dataset.b===right)a.classList.add("right");else if(a.dataset.b===id)a.classList.add("wrong")});
   const box=document.querySelector(".feedback");
   if(id===right){
@@ -408,24 +476,32 @@ function pickAuthor(id){
   }else{
     G.streak=0;SND.no();setWorm("sad");
     box.className="feedback no pop";
-    box.innerHTML=`<h2>Oops, wrong author! ✍️</h2><div class="ans">${bk.title} was written by <u>${bk.author}</u>. You still keep your 3 points.</div><div class="why">${clean(q[2])}</div><button class="big" id="next">Next ▶</button>`;
+    box.innerHTML=`<h2>${late?"Time's up! ⏰":"Oops, wrong author! ✍️"}</h2><div class="ans">${bk.title} was written by <u>${bk.author}</u>. You still keep your 3 points.</div><div class="why">${clean(q[2])}</div><button class="big" id="next">Next ▶</button>`;
   }
   refreshBar();wireNext();
 }
 function wireNext(){const n=document.getElementById("next");n.focus({preventScroll:true});n.scrollIntoView({behavior:"smooth",block:"nearest"});n.onclick=()=>{SND.tap();G.i++;ask();scrollTo({top:0,behavior:"smooth"})}}
 function setWorm(m){const w=app.querySelector(".worm");if(w)w.outerHTML=worm(m)}
-function refreshBar(){const old=app.querySelector(".bar"),p=app.querySelector(".progress");const tmp=document.createElement("div");tmp.innerHTML=bar();old.replaceWith(tmp.children[0]);p.replaceWith(tmp.children[0]);wireMute()}
+function refreshBar(){const tmp=document.createElement("div");tmp.innerHTML=bar();
+  [".bar",".progress",".timebar"].forEach((sel,k)=>{const old=app.querySelector(sel);if(old)old.replaceWith(tmp.querySelector(sel))});wireMute()}
 function endScreen(){
-  const max=G.deck.length*5,pct=G.score/max,stars=pct>=.85?3:pct>=.6?2:pct>=.3?1:0;
+  stopClock(false);
+  const n=G.deck.length,max=n*5,pct=G.score/max,stars=pct>=.85?3:pct>=.6?2:pct>=.3?1:0;
+  const old=load(recKey(n),null);
+  const isRec=!old||G.score>old.score||(G.score===old.score&&G.time<old.time);
+  if(isRec)save(recKey(n),{score:G.score,time:G.time,date:new Date().toISOString().slice(0,10)});
   const msg=["Keep reading, you'll get there!","Good start! Read a little more and try again.","Great job, book battler!","WOW! You're a Battle of the Books champion!"][stars];
-  if(stars>=2)confetti();
-  app.innerHTML=`<div class="panel">${worm(stars>=1?"happy":"sad")}
-    <h1>${stars>=2?"Hooray!":"Nice work!"}</h1>
+  app.innerHTML=`<div class="panel">${worm(stars>=1||isRec?"happy":"sad")}
+    ${isRec?`<div class="newrec">🏆 NEW RECORD! 🏆</div>`:""}
+    <h1>${isRec?"You beat it!":stars>=2?"Hooray!":"Nice work!"}</h1>
     <div class="stars">${[0,1,2].map(k=>`<span class="${k<stars?"":"off"}">⭐</span>`).join("")}</div>
     <div class="display" style="font-size:32px">${G.score} / ${max} points</div>
+    <div class="display" style="font-size:24px">⏱ ${fmt(G.time)}</div>
     <p>${msg} Best streak: 🔥 ${G.best}</p>
+    <div class="record">${old?(isRec?`Old record: ${old.score} points in ${fmt(old.time)}`:`🏆 Record to beat: <b>${old.score} points</b> in <b>${fmt(old.time)}</b>`):"This is your first record!"}</div>
     ${G.missed.length?`<div class="display" style="font-size:20px">Books to look at again</div><div class="missed">${G.missed.map(q=>`<div>In which book ${q[1]}<br><b>${book(q[0]).title}</b> by ${book(q[0]).author}</div>`).join("")}</div>`:`<p>No misses at all! 🏆</p>`}
     <div class="rowbtn"><button class="big" id="again">Play again ▶</button><button class="big alt" id="home">Change settings</button></div></div>`;
+  if(isRec){SND.fanfare();fireworks();setTimeout(fireworks,3800)}else if(stars>=2)confetti();
   document.getElementById("again").onclick=()=>{SND.tap();newGame()};
   document.getElementById("home").onclick=()=>{SND.tap();startScreen()};
 }
