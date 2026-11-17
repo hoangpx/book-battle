@@ -337,6 +337,24 @@ function beep(notes,type){if(!sound)return;try{ac=ac||new (window.AudioContext||
 const SND={yes:()=>beep([[660,.12],[880,.12],[1320,.22]]),half:()=>beep([[660,.14],[784,.2]]),no:()=>beep([[300,.18],[220,.3]]),tap:()=>beep([[520,.06]]),
   tick:()=>beep([[1000,.05]],"square"),
   fanfare:()=>beep([[523,.15],[659,.15],[784,.15],[1047,.3],[784,.12],[1047,.5]])};
+// firework sounds: soft whistle going up, low muffled boom, then gentle crackles
+let NOISE=null;
+function noiseBuf(){if(!NOISE){const n=ac.sampleRate*1.5;NOISE=ac.createBuffer(1,n,ac.sampleRate);const d=NOISE.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1}return NOISE}
+function audio(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();return ac}catch(e){return null}}
+function whistle(){if(!sound||!audio())return;const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
+  o.type="sine";o.frequency.setValueAtTime(700,t);o.frequency.exponentialRampToValueAtTime(1500,t+.9);
+  g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.025,t+.15);g.gain.linearRampToValueAtTime(0,t+.9);
+  o.connect(g).connect(ac.destination);o.start(t);o.stop(t+.95)}
+function boom(){if(!sound||!audio())return;const t=ac.currentTime;
+  const s=ac.createBufferSource();s.buffer=noiseBuf();const f=ac.createBiquadFilter();f.type="lowpass";
+  f.frequency.setValueAtTime(900,t);f.frequency.exponentialRampToValueAtTime(120,t+1);
+  const g=ac.createGain();g.gain.setValueAtTime(.22,t);g.gain.exponentialRampToValueAtTime(.001,t+1.1);
+  s.connect(f).connect(g).connect(ac.destination);s.start(t,Math.random()*.3);s.stop(t+1.2);
+  // crackle: lots of tiny high pops fading out
+  for(let k=0;k<14;k++){const at=t+.25+Math.random()*.9,c=ac.createBufferSource(),hp=ac.createBiquadFilter(),cg=ac.createGain();
+    c.buffer=noiseBuf();hp.type="highpass";hp.frequency.value=3000;
+    cg.gain.setValueAtTime(.05*(1-(at-t)/1.3),at);cg.gain.exponentialRampToValueAtTime(.001,at+.035);
+    c.connect(hp).connect(cg).connect(ac.destination);c.start(at,Math.random());c.stop(at+.04)}}
 
 // ---------- confetti + fireworks ----------
 const cv=document.getElementById("fx"),cx=cv.getContext("2d");let parts=[],running=false;
@@ -353,7 +371,7 @@ function burst(x,y){const d=DPR(),c=COLORS[Math.floor(Math.random()*COLORS.lengt
   run()}
 function rocket(){const d=DPR();const x=cv.width*(.15+Math.random()*.7),ty=cv.height*(.12+Math.random()*.3);
   parts.push({k:"r",x,y:cv.height,vx:(Math.random()-.5)*2*d,vy:-(cv.height-ty)/38,ty,r:3*d,c:"#fff3c4",l:60,L:60});
-  beep([[180,.25]],"sawtooth");run()}
+  whistle();run()}
 function fireworks(){if(calm())return;for(let k=0;k<9;k++)setTimeout(rocket,k*380+Math.random()*200)}
 function tick(){
   cx.globalCompositeOperation="source-over";cx.clearRect(0,0,cv.width,cv.height);const d=DPR();
@@ -367,7 +385,7 @@ function tick(){
     cx.globalAlpha=Math.max(0,p.l/p.L);cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,p.r,0,7);cx.fill();cx.globalAlpha=1;
   });
   parts=parts.filter(p=>p.l>0&&p.y<cv.height+40);
-  born.forEach(([x,y])=>{burst(x,y);beep([[90+Math.random()*60,.35]],"sawtooth")});
+  born.forEach(([x,y])=>{burst(x,y);boom()});
   if(parts.length)requestAnimationFrame(tick);else{running=false;cx.clearRect(0,0,cv.width,cv.height)}}
 
 // ---------- storage ----------
